@@ -9,7 +9,7 @@ A Spring Boot service for integrating with OpenAI's API. This is a minimal Sprin
 **Technology Stack:**
 - Java 17
 - Spring Boot 3.4.1
-- Maven 3.6+
+- Gradle 8.5
 - OpenAI Java Client (theokanning.openai-gpt3-java v0.18.2)
 - Lombok for reducing boilerplate
 - Spring Boot Actuator for health checks
@@ -18,33 +18,57 @@ A Spring Boot service for integrating with OpenAI's API. This is a minimal Sprin
 
 ### Running the Application
 ```bash
-mvn spring-boot:run
+# Windows
+gradlew.bat bootRun
+
+# Linux/Mac
+./gradlew bootRun
 ```
 Application runs on `http://localhost:8080`
 
 ### Building
 ```bash
-mvn clean package
+# Windows
+gradlew.bat build
+
+# Linux/Mac
+./gradlew build
 ```
 
 ### Testing
 ```bash
-mvn test
+# Windows
+gradlew.bat test
+
+# Linux/Mac
+./gradlew test
 ```
 
 To run a single test class:
 ```bash
-mvn test -Dtest=ClassName
+# Windows
+gradlew.bat test --tests ClassName
+
+# Linux/Mac
+./gradlew test --tests ClassName
 ```
 
 To run a specific test method:
 ```bash
-mvn test -Dtest=ClassName#methodName
+# Windows
+gradlew.bat test --tests ClassName.methodName
+
+# Linux/Mac
+./gradlew test --tests ClassName.methodName
 ```
 
 ### Clean and Rebuild
 ```bash
-mvn clean install
+# Windows
+gradlew.bat clean build
+
+# Linux/Mac
+./gradlew clean build
 ```
 
 ## Configuration

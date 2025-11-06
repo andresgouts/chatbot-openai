@@ -6,13 +6,12 @@ A Spring Boot service for integrating with OpenAI's API.
 
 - Java 17
 - Spring Boot 3.4.1
-- Maven
+- Gradle 8.5
 - OpenAI Java Client
 
 ## Prerequisites
 
 - JDK 17 or higher
-- Maven 3.6+
 - OpenAI API Key
 
 ## Configuration
@@ -27,8 +26,14 @@ Or update the `application.properties` file with your API key.
 
 ## Running the Application
 
+### On Windows:
 ```bash
-mvn spring-boot:run
+gradlew.bat bootRun
+```
+
+### On Linux/Mac:
+```bash
+./gradlew bootRun
 ```
 
 The application will start on `http://localhost:8080`
@@ -36,7 +41,21 @@ The application will start on `http://localhost:8080`
 ## Building the Application
 
 ```bash
-mvn clean package
+# Windows
+gradlew.bat build
+
+# Linux/Mac
+./gradlew build
+```
+
+## Running Tests
+
+```bash
+# Windows
+gradlew.bat test
+
+# Linux/Mac
+./gradlew test
 ```
 
 ## Health Check
@@ -61,6 +80,11 @@ openai-chatbot/
 │   └── test/
 │       └── java/
 │           └── com/openai/chatbot/
-├── pom.xml
+├── gradle/
+│   └── wrapper/
+├── build.gradle
+├── settings.gradle
+├── gradlew
+├── gradlew.bat
 └── README.md
 ```

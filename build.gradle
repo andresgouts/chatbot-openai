@@ -1,0 +1,53 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.4.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.openai'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Spring Boot Web Starter
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Spring Boot Validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// Spring Boot Actuator for health checks
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// Lombok for reducing boilerplate
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Spring Boot DevTools for development
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// OpenAI Java Client
+	implementation 'com.theokanning.openai-gpt3-java:service:0.18.2'
+
+	// Spring Boot Test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

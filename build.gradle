@@ -3,6 +3,7 @@ plugins {
 	id 'groovy'
 	id 'org.springframework.boot' version '3.4.1'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.github.node-gradle.node' version '7.0.1'
 }
 
 group = 'com.openai'
@@ -24,6 +25,17 @@ repositories {
 	mavenCentral()
 }
 
+// ============================================================================
+// GRADLE-NODE PLUGIN CONFIGURATION
+// ============================================================================
+node {
+	version = '20.10.0'
+	npmVersion = '10.2.3'
+	download = true
+	workDir = file("${System.getProperty('java.io.tmpdir')}/gradle-node")
+	nodeProjectDir = file("${projectDir}/frontend")
+}
+
 dependencies {
 	// Spring Boot Web Starter
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -33,6 +45,9 @@ dependencies {
 
 	// Spring Boot Actuator for health checks
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// Spring Security for security headers and protection
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 
 	// Lombok for reducing boilerplate
 	compileOnly 'org.projectlombok:lombok'
@@ -58,4 +73,99 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// ============================================================================
+// FRONTEND BUILD TASKS
+// ============================================================================
+
+// Define output directories
+ext {
+	frontendDir = file("${projectDir}/frontend")
+	frontendBuildDir = file("${frontendDir}/out")
+	staticDir = file("${projectDir}/src/main/resources/static")
+}
+
+// Task 1: Install frontend dependencies
+tasks.register('installFrontendDependencies', com.github.gradle.node.npm.task.NpmTask) {
+	dependsOn npmSetup
+	description = 'Install frontend dependencies using npm'
+	args = ['install']
+	workingDir = frontendDir
+
+	inputs.file file("${frontendDir}/package.json")
+	inputs.file file("${frontendDir}/package-lock.json")
+	outputs.dir file("${frontendDir}/node_modules")
+}
+
+// Task 2: Build frontend (Next.js static export)
+tasks.register('buildFrontend', com.github.gradle.node.npm.task.NpmTask) {
+	dependsOn installFrontendDependencies
+	description = 'Build Next.js frontend with static export'
+	args = ['run', 'build']
+	workingDir = frontendDir
+
+	inputs.files fileTree("${frontendDir}") {
+		exclude 'node_modules/**'
+		exclude '.next/**'
+		exclude 'out/**'
+	}
+	outputs.dir frontendBuildDir
+	outputs.dir file("${frontendDir}/.next")
+
+	environment = ['NODE_ENV': 'production']
+}
+
+// Task 3: Copy frontend build to Spring Boot static directory
+tasks.register('copyFrontendToStatic', Copy) {
+	dependsOn buildFrontend
+	description = 'Copy frontend build output to src/main/resources/static'
+
+	from frontendBuildDir
+	into staticDir
+
+	doFirst {
+		staticDir.deleteDir()
+		staticDir.mkdirs()
+	}
+
+	doLast {
+		logger.lifecycle("Frontend build copied to ${staticDir}")
+	}
+}
+
+// Task 4: Clean frontend
+tasks.register('cleanFrontend', Delete) {
+	description = 'Clean frontend build artifacts'
+	delete frontendBuildDir
+	delete file("${frontendDir}/.next")
+}
+
+// Task 5: Development task for running frontend dev server
+tasks.register('devFrontend', com.github.gradle.node.npm.task.NpmTask) {
+	dependsOn installFrontendDependencies
+	description = 'Run Next.js development server (port 3000)'
+	args = ['run', 'dev']
+	workingDir = frontendDir
+}
+
+// ============================================================================
+// INTEGRATION WITH SPRING BOOT BUILD
+// ============================================================================
+
+// Wire copyFrontendToStatic into processResources phase
+processResources.dependsOn copyFrontendToStatic
+
+// Include frontend cleanup in clean task
+tasks.named('clean') {
+	dependsOn cleanFrontend
+}
+
+// Ensure static folder exists even if no frontend
+tasks.named('processResources') {
+	doFirst {
+		if (!staticDir.exists()) {
+			staticDir.mkdirs()
+		}
+	}
 }

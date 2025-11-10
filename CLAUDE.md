@@ -12,16 +12,18 @@ A full-stack monorepo application combining a Spring Boot backend with a Next.js
 - Java 21
 - Spring Boot 3.4.1
 - Gradle 8.5 (with gradle-node-plugin 7.0.1)
+- Spring Security 6 (security headers, CORS)
 - OpenAI Java Client (theokanning.openai-gpt3-java v0.18.2)
 - Lombok for reducing boilerplate
 - Spring Boot Actuator for health checks
 - Spock/Groovy for testing
 
 **Frontend:**
-- Next.js 14 (static export)
-- React 18
+- Next.js 14.2.33 (static export)
+- React 18.3.1
 - TypeScript 5
 - Pages Router architecture
+- Jest & React Testing Library for testing
 
 ## Essential Commands
 
@@ -78,6 +80,8 @@ gradlew.bat clean build
 Output: `build/libs/openai-chatbot-0.0.1-SNAPSHOT.jar`
 
 ### Testing
+
+**Backend Tests (Spock/Groovy):**
 ```bash
 # Windows
 gradlew.bat test
@@ -102,6 +106,13 @@ gradlew.bat test --tests ClassName.methodName
 
 # Linux/Mac
 ./gradlew test --tests ClassName.methodName
+```
+
+**Frontend Tests (Jest):**
+```bash
+cd frontend
+npm test              # Run all tests
+npm run test:watch    # Run tests in watch mode
 ```
 
 ### Clean and Rebuild
@@ -152,9 +163,11 @@ chatbot-openai/
 - Testing with Spock/Groovy
 
 **Frontend Structure:**
-- Pages Router architecture (Next.js 14)
+- Pages Router architecture (Next.js 14.2.33)
 - Static export (no SSR)
 - TypeScript for type safety
+- Error pages (404, 500)
+- Jest & React Testing Library for testing
 - Served by Spring Boot in production
 
 **Build Integration:**
@@ -163,10 +176,21 @@ chatbot-openai/
 - Static files copied to `src/main/resources/static/`
 - Single JAR contains both frontend and backend
 
+**Security Configuration:**
+- **Spring Security** with security headers:
+  - Content Security Policy (CSP)
+  - XSS Protection
+  - Frame Options (clickjacking prevention)
+  - MIME type sniffing protection
+  - Referrer Policy
+- **CORS** configured for development mode (localhost:3000)
+- **SPA routing** controller for client-side routing support
+
 **Dependencies:**
 - Spring Boot Web for REST APIs
 - Spring Boot Validation for request validation
 - Spring Boot Actuator for monitoring
+- Spring Boot Security for security headers and CORS
 - Spring Boot DevTools for development hot reload
 - Lombok annotations are available for reducing boilerplate
 - Next.js, React, TypeScript for frontend
@@ -185,6 +209,15 @@ chatbot-openai/
 - Frontend dev server supports hot reload
 - Static export means no SSR - all rendering happens client-side
 - TypeScript is configured for strict type checking
+- Jest & React Testing Library configured for component testing
+- Custom error pages (404, 500) for better UX
+
+**Security:**
+- Spring Security is configured with CSP, XSS protection, and frame options
+- CORS is enabled for development mode (frontend dev server on port 3000)
+- API endpoints at `/api/**` have CSRF protection disabled (stateless REST API)
+- All static resources are publicly accessible
+- SPA routing controller forwards non-API routes to index.html
 
 **Gradle Tasks:**
 - `gradlew installFrontendDependencies` - Install npm packages
@@ -194,8 +227,16 @@ chatbot-openai/
 - `gradlew devFrontend` - Run Next.js dev server
 - `gradlew build` - Complete build (frontend + backend)
 
+**Frontend npm Scripts:**
+- `npm run dev` - Start Next.js dev server on port 3000
+- `npm run build` - Build Next.js static export
+- `npm test` - Run Jest tests
+- `npm run test:watch` - Run Jest in watch mode
+- `npm run lint` - Lint frontend code
+
 **Development Workflow:**
 1. For backend-only work: Just run `gradlew bootRun`
 2. For frontend-only work: Run `cd frontend && npm run dev`
 3. For full-stack development: Run both in separate terminals
 4. For production build: Run `gradlew clean build`
+5. For testing: Run `gradlew test` (backend) or `cd frontend && npm test` (frontend)

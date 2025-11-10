@@ -7,13 +7,15 @@ A full-stack application combining a Spring Boot backend with a Next.js frontend
 ### Backend
 - Java 21
 - Spring Boot 3.4.1
+- Spring Security 6 (security headers, CORS)
 - Gradle 8.5
 - OpenAI Java Client
 
 ### Frontend
-- Next.js 14
-- React 18
+- Next.js 14.2.33
+- React 18.3.1
 - TypeScript 5
+- Jest & React Testing Library
 
 ## Prerequisites
 
@@ -93,12 +95,20 @@ Output: `build/libs/openai-chatbot-0.0.1-SNAPSHOT.jar`
 
 ## Running Tests
 
+### Backend Tests
 ```bash
 # Windows
 gradlew.bat test
 
 # Linux/Mac
 ./gradlew test
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test                # Run all tests
+npm run test:watch      # Run tests in watch mode
 ```
 
 ## Health Check
@@ -131,9 +141,15 @@ openai-chatbot/
 │   ├── pages/
 │   │   ├── _app.tsx
 │   │   ├── _document.tsx
-│   │   └── index.tsx
+│   │   ├── index.tsx
+│   │   ├── 404.tsx                 # Custom 404 error page
+│   │   └── 500.tsx                 # Custom 500 error page
+│   ├── __tests__/                  # Jest tests
+│   │   └── index.test.tsx
 │   ├── public/
 │   ├── package.json
+│   ├── jest.config.js
+│   ├── jest.setup.js
 │   ├── next.config.js
 │   ├── tsconfig.json
 │   └── .gitignore
@@ -160,3 +176,26 @@ openai-chatbot/
 - `gradlew test` - Run backend tests
 - `gradlew build` - Build complete application (frontend + backend)
 - `gradlew clean` - Clean all build artifacts
+
+## Features
+
+### Security
+- **Spring Security** configured with:
+  - Content Security Policy (CSP)
+  - XSS Protection
+  - Frame Options (clickjacking prevention)
+  - MIME type sniffing protection
+  - Referrer Policy
+- **CORS** enabled for development mode (localhost:3000)
+- **SPA routing** support for client-side navigation
+
+### Frontend
+- **Error pages**: Custom 404 and 500 error pages
+- **Testing**: Jest and React Testing Library configured
+- **TypeScript**: Strict type checking enabled
+- **Static export**: No server-side rendering, fully static
+
+### Development
+- **Hot reload**: Both frontend and backend support hot reload in development mode
+- **Separate dev servers**: Frontend (3000) and backend (8080) run independently
+- **Automated builds**: Gradle automatically builds and integrates frontend

@@ -1,34 +1,146 @@
-import { render, screen } from '@testing-library/react'
-import Home from '../index'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import Home from '../pages/index'
 
-describe('Home', () => {
-  it('renders the welcome heading', () => {
+// Mock the chat API
+jest.mock('@/services/api/chatApi', () => ({
+  chatApi: {
+    sendMessage: jest.fn(),
+  },
+}))
+
+import { chatApi } from '@/services/api/chatApi'
+
+describe('Home (LepeThat Chat Interface)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('renders the LepeThat title', () => {
     render(<Home />)
 
-    const heading = screen.getByText(/Welcome to/i)
+    const heading = screen.getByText(/LepeThat/i)
     expect(heading).toBeInTheDocument()
   })
 
-  it('renders Next.js in the heading', () => {
+  it('renders the chat input and send button', () => {
     render(<Home />)
 
-    const nextJsText = screen.getByText(/Next.js/i)
-    expect(nextJsText).toBeInTheDocument()
+    const textarea = screen.getByPlaceholderText(/Type your message/i)
+    const button = screen.getByRole('button', { name: /send/i })
+
+    expect(textarea).toBeInTheDocument()
+    expect(button).toBeInTheDocument()
   })
 
-  it('renders documentation links', () => {
+  it('displays empty state message initially', () => {
     render(<Home />)
 
-    const docsLink = screen.getByRole('link', { name: /Docs/i })
-    expect(docsLink).toBeInTheDocument()
-    expect(docsLink).toHaveAttribute('href', 'https://nextjs.org/docs')
+    const emptyState = screen.getByText(/Start a conversation with LepeThat/i)
+    expect(emptyState).toBeInTheDocument()
   })
 
-  it('renders learn link', () => {
+  it('sends a message when send button is clicked', async () => {
+    const mockSendMessage = chatApi.sendMessage as jest.Mock
+    mockSendMessage.mockResolvedValue({
+      response: 'Hello from AI!',
+      model: 'gpt-3.5-turbo',
+    })
+
+    const user = userEvent.setup()
     render(<Home />)
 
-    const learnLink = screen.getByRole('link', { name: /Learn/i })
-    expect(learnLink).toBeInTheDocument()
-    expect(learnLink).toHaveAttribute('href', 'https://nextjs.org/learn')
+    const textarea = screen.getByPlaceholderText(/Type your message/i)
+    const button = screen.getByRole('button', { name: /send/i })
+
+    // Type a message
+    await user.type(textarea, 'Hello, AI!')
+
+    // Click send
+    await user.click(button)
+
+    // Verify the API was called
+    expect(mockSendMessage).toHaveBeenCalledWith('Hello, AI!')
+
+    // Wait for the user message to appear
+    await waitFor(() => {
+      expect(screen.getByText('Hello, AI!')).toBeInTheDocument()
+    })
+
+    // Wait for the AI response to appear
+    await waitFor(() => {
+      expect(screen.getByText('Hello from AI!')).toBeInTheDocument()
+    })
+  })
+
+  it('disables input and button while loading', async () => {
+    const mockSendMessage = chatApi.sendMessage as jest.Mock
+    mockSendMessage.mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve({ response: 'Response', model: 'gpt-3.5-turbo' }), 100))
+    )
+
+    const user = userEvent.setup()
+    render(<Home />)
+
+    const textarea = screen.getByPlaceholderText(/Type your message/i) as HTMLTextAreaElement
+    const button = screen.getByRole('button', { name: /send/i })
+
+    // Type and send a message
+    await user.type(textarea, 'Test message')
+    await user.click(button)
+
+    // Check that input and button are disabled
+    expect(textarea.disabled).toBe(true)
+    expect(button).toBeDisabled()
+
+    // Wait for the request to complete
+    await waitFor(() => {
+      expect(textarea.disabled).toBe(false)
+    })
+  })
+
+  it('displays error message when API call fails', async () => {
+    const mockSendMessage = chatApi.sendMessage as jest.Mock
+    mockSendMessage.mockRejectedValue(new Error('Network error'))
+
+    const user = userEvent.setup()
+    render(<Home />)
+
+    const textarea = screen.getByPlaceholderText(/Type your message/i)
+    const button = screen.getByRole('button', { name: /send/i })
+
+    // Type and send a message
+    await user.type(textarea, 'Test message')
+    await user.click(button)
+
+    // Wait for error message to appear
+    await waitFor(() => {
+      expect(screen.getByText(/Network error/i)).toBeInTheDocument()
+    })
+  })
+
+  it('clears input after sending message', async () => {
+    const mockSendMessage = chatApi.sendMessage as jest.Mock
+    mockSendMessage.mockResolvedValue({
+      response: 'Response',
+      model: 'gpt-3.5-turbo',
+    })
+
+    const user = userEvent.setup()
+    render(<Home />)
+
+    const textarea = screen.getByPlaceholderText(/Type your message/i) as HTMLTextAreaElement
+    const button = screen.getByRole('button', { name: /send/i })
+
+    // Type and send a message
+    await user.type(textarea, 'Test message')
+    expect(textarea.value).toBe('Test message')
+
+    await user.click(button)
+
+    // Input should be cleared
+    await waitFor(() => {
+      expect(textarea.value).toBe('')
+    })
   })
 })

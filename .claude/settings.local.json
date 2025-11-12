@@ -5,7 +5,10 @@
       "Bash(nul)",
       "Bash(git add:*)",
       "Bash(gradlew.bat clean build:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh api:*)"
     ],
     "deny": [],
     "ask": []

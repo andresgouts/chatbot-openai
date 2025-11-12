@@ -38,6 +38,9 @@ export function ChatInput({
         onKeyDown={handleKeyDown}
         placeholder="Type your message... (Shift+Enter for new line)"
         disabled={isLoading}
+        maxLength={UI_CONSTANTS.maxMessageLength}
+        aria-label="Chat message input"
+        aria-describedby="input-hint"
         style={{
           ...styles.textarea,
           ...(isLoading && styles.textareaDisabled),
@@ -46,6 +49,8 @@ export function ChatInput({
       <button
         onClick={onSend}
         disabled={isDisabled}
+        aria-label="Send message"
+        aria-disabled={isDisabled}
         style={{
           ...styles.button,
           ...(isDisabled && styles.buttonDisabled),

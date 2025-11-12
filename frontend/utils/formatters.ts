@@ -15,13 +15,17 @@ export function formatTimestamp(date: Date): string {
   });
 }
 
+// Counter to ensure unique IDs even for rapid successive calls
+let idCounter = 0;
+
 /**
  * Generates a unique message ID
- * Uses timestamp and random number for uniqueness
+ * Uses timestamp, counter, and random number for uniqueness
+ * Counter prevents race conditions when generating IDs in rapid succession
  * @returns Unique message ID
  */
 export function generateMessageId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  return `${Date.now()}-${++idCounter}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 /**

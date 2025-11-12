@@ -8,6 +8,7 @@ import { chatApi } from '@/services/api/chatApi';
 import { Message } from '@/services/types';
 import { generateMessageId } from '@/utils/formatters';
 import { HttpError } from '@/services/api/httpClient';
+import { UI_CONSTANTS } from '@/utils/constants';
 
 interface UseChatReturn {
   messages: Message[];
@@ -33,6 +34,12 @@ export function useChat(): UseChatReturn {
     const trimmedInput = inputValue.trim();
 
     if (!trimmedInput || isLoading) {
+      return;
+    }
+
+    // Validate message length
+    if (trimmedInput.length > UI_CONSTANTS.maxMessageLength) {
+      setError(`Message too long (max ${UI_CONSTANTS.maxMessageLength} characters)`);
       return;
     }
 
@@ -99,10 +106,6 @@ export function useChat(): UseChatReturn {
     }
   };
 
-  const clearError = () => {
-    setError(null);
-  };
-
   return {
     messages,
     inputValue,
@@ -110,6 +113,5 @@ export function useChat(): UseChatReturn {
     isLoading,
     error,
     sendMessage,
-    clearError,
   };
 }

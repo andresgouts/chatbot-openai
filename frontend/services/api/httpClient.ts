@@ -62,8 +62,6 @@ class HttpClient {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
       if (!response.ok) {
         // Try to parse error response from backend
         let errorData: ApiError | undefined;
@@ -83,8 +81,6 @@ class HttpClient {
 
       return await response.json();
     } catch (error) {
-      clearTimeout(timeoutId); // Ensure cleanup even on error
-
       if (error instanceof HttpError) {
         throw error;
       }
@@ -98,6 +94,8 @@ class HttpClient {
         error instanceof Error ? error.message : 'Network error',
         0
       );
+    } finally {
+      clearTimeout(timeoutId); // Always cleanup timeout
     }
   }
 }

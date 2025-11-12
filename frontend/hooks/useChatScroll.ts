@@ -19,7 +19,7 @@ export function useChatScroll(messages: Message[]): UseChatScrollReturn {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && scrollRef.current.scrollIntoView) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

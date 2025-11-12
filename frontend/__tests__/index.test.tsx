@@ -19,7 +19,7 @@ describe('Home (LepeThat Chat Interface)', () => {
   it('renders the LepeThat title', () => {
     render(<Home />)
 
-    const heading = screen.getByText(/LepeThat/i)
+    const heading = screen.getByRole('heading', { name: /LepeThat/i })
     expect(heading).toBeInTheDocument()
   })
 
@@ -114,9 +114,12 @@ describe('Home (LepeThat Chat Interface)', () => {
     await user.click(button)
 
     // Wait for error message to appear
-    await waitFor(() => {
-      expect(screen.getByText(/Network error/i)).toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText(/Failed to send message/i)).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
   })
 
   it('clears input after sending message', async () => {

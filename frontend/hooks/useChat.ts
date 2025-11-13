@@ -106,6 +106,10 @@ export function useChat(): UseChatReturn {
     }
   };
 
+  const clearError = () => {
+    setError(null);
+  };
+
   return {
     messages,
     inputValue,
@@ -113,5 +117,6 @@ export function useChat(): UseChatReturn {
     isLoading,
     error,
     sendMessage,
+    clearError,
   };
 }

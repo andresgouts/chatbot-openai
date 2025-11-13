@@ -7,7 +7,7 @@ import React from 'react';
 import { ChatMessage } from './ChatMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { Message } from '@/services/types';
-import { COLORS } from '@/utils/constants';
+import { COLORS, BRANDING } from '@/utils/constants';
 
 interface ChatMessageListProps {
   messages: Message[];
@@ -24,7 +24,7 @@ export function ChatMessageList({
     <div style={styles.container}>
       {messages.length === 0 && (
         <div style={styles.emptyState}>
-          <p style={styles.emptyText}>Start a conversation with LepeThat</p>
+          <p style={styles.emptyText}>Start a conversation with {BRANDING.appName}</p>
         </div>
       )}
 

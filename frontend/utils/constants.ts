@@ -48,3 +48,11 @@ export const UI_CONSTANTS = {
   inputMinHeight: '3rem',
   inputMaxHeight: '10rem',
 } as const;
+
+/**
+ * Branding constants
+ */
+export const BRANDING = {
+  appName: 'LepeChat',
+  tagline: 'AI Chat Assistant powered by OpenAI',
+} as const;

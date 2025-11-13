@@ -21,6 +21,8 @@ export function ChatInput({
   isLoading,
 }: ChatInputProps): JSX.Element {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -34,10 +36,12 @@ export function ChatInput({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value);
 
-    // Auto-grow textarea
+    // Auto-grow textarea with max height enforcement
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      const maxHeight = parseFloat(UI_CONSTANTS.inputMaxHeight) * 16; // Convert rem to px (assuming 1rem = 16px)
+      const newHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
+      textareaRef.current.style.height = `${newHeight}px`;
     }
   };
 
@@ -73,9 +77,15 @@ export function ChatInput({
           onClick={onSend}
           disabled={isDisabled}
           aria-label="Send message"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           style={{
             ...styles.iconButton,
             ...(isDisabled && styles.iconButtonDisabled),
+            ...(isHovered && !isDisabled && styles.iconButtonHover),
+            ...(isFocused && !isDisabled && styles.iconButtonFocus),
           }}
         >
           <SendIcon
@@ -136,5 +146,12 @@ const styles = {
   },
   iconButtonDisabled: {
     cursor: 'not-allowed',
+  },
+  iconButtonHover: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  iconButtonFocus: {
+    outline: `2px solid ${COLORS.primary}`,
+    outlineOffset: '2px',
   },
 } as const;

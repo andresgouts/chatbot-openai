@@ -4,13 +4,14 @@
  */
 
 import React from 'react';
-import { COLORS, GRADIENTS } from '@/utils/constants';
+import { COLORS } from '@/utils/constants';
+import { Logo } from '@/components/branding';
 
 export function ChatHeader(): JSX.Element {
   return (
     <header style={styles.header}>
-      <h1 style={styles.title}>
-        <span style={styles.titleText}>LepeThat</span>
+      <h1 style={styles.heading}>
+        <Logo size="medium" />
       </h1>
     </header>
   );
@@ -21,16 +22,12 @@ const styles = {
     padding: '1rem 2rem',
     borderBottom: `1px solid ${COLORS.border}`,
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  title: {
+  heading: {
     margin: 0,
-    fontSize: '1.5rem',
-    fontWeight: 600,
-    textAlign: 'center' as const,
-  },
-  titleText: {
-    background: GRADIENTS.primary,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    fontWeight: 'inherit',
   },
 } as const;

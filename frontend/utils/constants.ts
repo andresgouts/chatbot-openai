@@ -20,14 +20,6 @@ export const COLORS = {
 } as const;
 
 /**
- * Gradient definitions for accent text
- */
-export const GRADIENTS = {
-  primary: 'linear-gradient(to right, #0070f3, #00d4ff)',
-  error: 'linear-gradient(to right, #ff4444, #ff0000)',
-} as const;
-
-/**
  * API configuration
  */
 export const API_CONFIG = {
@@ -47,4 +39,12 @@ export const UI_CONSTANTS = {
   avatarSize: '2.5rem',
   inputMinHeight: '3rem',
   inputMaxHeight: '10rem',
+} as const;
+
+/**
+ * Branding constants
+ */
+export const BRANDING = {
+  appName: 'LepeChat',
+  tagline: 'AI Chat Assistant powered by OpenAI',
 } as const;

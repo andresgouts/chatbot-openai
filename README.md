@@ -7,9 +7,13 @@ A full-stack application combining a Spring Boot backend with a Next.js frontend
 ### Backend
 - Java 21
 - Spring Boot 3.4.1
+- Spring Data JPA (conversation persistence)
+- H2 Database (file-based persistence)
+- Flyway (database migrations)
 - Spring Security 6 (security headers, CORS)
 - Gradle 8.5
 - OpenAI Java Client
+- SpringDoc OpenAPI (API documentation)
 
 ### Frontend
 - Next.js 14.2.33
@@ -111,13 +115,39 @@ npm test                # Run all tests
 npm run test:watch      # Run tests in watch mode
 ```
 
+## API Documentation
+
+Once the application is running, you can access the interactive API documentation:
+
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
+
+The Swagger UI provides:
+- Interactive API testing
+- Complete endpoint documentation
+- Request/response schemas
+- Example requests
+
 ## Health Check
 
-Once running, you can check the application health at:
+Check the application health at:
 
 ```
 http://localhost:8080/actuator/health
 ```
+
+## H2 Database Console
+
+Access the H2 database console at:
+
+```
+http://localhost:8080/h2-console
+```
+
+Connection details:
+- **JDBC URL**: `jdbc:h2:file:./data/chatbot`
+- **Username**: `sa`
+- **Password**: (leave empty)
 
 ## Project Structure
 
@@ -126,17 +156,21 @@ openai-chatbot/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/openai/chatbot/
-│   │   │   ├── controller/
-│   │   │   ├── service/
-│   │   │   ├── config/
-│   │   │   ├── dto/
-│   │   │   ├── exception/
+│   │   │   ├── controller/          # REST API endpoints
+│   │   │   ├── service/             # Business logic
+│   │   │   ├── config/              # Spring configuration
+│   │   │   ├── dto/                 # Data transfer objects
+│   │   │   ├── entity/              # JPA entities
+│   │   │   ├── repository/          # Spring Data repositories
+│   │   │   ├── exception/           # Custom exceptions
 │   │   │   └── OpenaiChatbotApplication.java
 │   │   └── resources/
 │   │       ├── application.properties
-│   │       └── static/               # Frontend build output (auto-generated)
+│   │       ├── db/migration/        # Flyway database migrations
+│   │       └── static/              # Frontend build output (auto-generated)
 │   └── test/
 │       └── groovy/com/openai/chatbot/
+├── data/                             # H2 database files (auto-generated)
 ├── frontend/                          # Next.js frontend
 │   ├── pages/
 │   │   ├── _app.tsx
@@ -179,6 +213,36 @@ openai-chatbot/
 
 ## Features
 
+### Chat Functionality
+- **OpenAI Integration**: Real-time chat with OpenAI GPT models
+- **Conversation History**: Persistent storage of all conversations and messages
+- **Auto-generated Titles**: Conversations automatically titled from first message (first 50 characters)
+- **Continue Conversations**: Resume previous conversations by conversation ID
+- **Message Persistence**: Immediate save after each user/assistant message pair
+
+### API Endpoints
+
+#### Chat API
+- `POST /api/chat` - Send a chat message and receive AI response
+  - Supports continuing existing conversations via `conversationId`
+  - Automatically creates new conversation if none provided
+  - Returns AI response with conversation ID
+
+#### Conversation API
+- `GET /api/conversations?userId={uuid}` - List all conversations for a user
+  - Returns conversation ID and title only (for performance)
+  - Ordered by most recently updated
+- `GET /api/conversations/{id}` - Get complete conversation with all messages
+  - Returns full conversation details including all messages
+  - Messages include role, content, and timestamp
+
+### Data Persistence
+- **H2 Database**: File-based persistence at `./data/chatbot`
+- **Flyway Migrations**: Version-controlled database schema
+- **JPA/Hibernate**: Clean entity-based data modeling
+- **Transaction Management**: ACID guarantees for conversation operations
+- **Unicode Support**: Proper handling of emojis and multi-byte characters
+
 ### Security
 - **Spring Security** configured with:
   - Content Security Policy (CSP)
@@ -187,7 +251,14 @@ openai-chatbot/
   - MIME type sniffing protection
   - Referrer Policy
 - **CORS** enabled for development mode (localhost:3000)
+- **Input Sanitization**: Control character removal in conversation titles
 - **SPA routing** support for client-side navigation
+
+### API Documentation
+- **SpringDoc OpenAPI**: Interactive API documentation
+- **Swagger UI**: Browser-based API testing interface
+- **Complete Schemas**: Full request/response documentation
+- **Example Requests**: Pre-populated examples for testing
 
 ### Frontend
 - **Error pages**: Custom 404 and 500 error pages
@@ -199,3 +270,5 @@ openai-chatbot/
 - **Hot reload**: Both frontend and backend support hot reload in development mode
 - **Separate dev servers**: Frontend (3000) and backend (8080) run independently
 - **Automated builds**: Gradle automatically builds and integrates frontend
+- **H2 Console**: Database inspection via web interface
+- **Comprehensive Testing**: Spock/Groovy tests for backend, Jest for frontend

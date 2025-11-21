@@ -63,6 +63,44 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles ConversationNotFoundException.
+     *
+     * @param ex the conversation not found exception
+     * @return ResponseEntity with 404 status and error message
+     */
+    @ExceptionHandler(ConversationNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleConversationNotFoundException(ConversationNotFoundException ex) {
+        log.error("Conversation not found: {}", ex.getMessage());
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", HttpStatus.NOT_FOUND.value());
+        errorResponse.put("error", "Not Found");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Handles ConversationServiceException.
+     *
+     * @param ex the conversation service exception
+     * @return ResponseEntity with 500 status and error message
+     */
+    @ExceptionHandler(ConversationServiceException.class)
+    public ResponseEntity<Map<String, Object>> handleConversationServiceException(ConversationServiceException ex) {
+        log.error("Conversation service error: {}", ex.getMessage(), ex);
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorResponse.put("error", "Internal Server Error");
+        errorResponse.put("message", "Database connection error");
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
      * Handles all other unexpected exceptions.
      *
      * @param ex the exception

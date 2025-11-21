@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.UUID;
+
 /**
  * Request DTO for chat endpoint.
  * Contains the user's message with validation constraints.
@@ -14,4 +16,10 @@ public class ChatRequest {
     @NotBlank(message = "Message is required")
     @Size(max = 4000, message = "Message must not exceed 4000 characters")
     private String message;
+
+    /**
+     * Optional conversation ID for continuing an existing conversation.
+     * If null, a new conversation will be created.
+     */
+    private UUID conversationId;
 }

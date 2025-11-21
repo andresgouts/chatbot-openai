@@ -15,18 +15,24 @@ import spock.lang.Subject
 class ChatServiceSpec extends Specification {
 
     OpenAiService openAiService = Mock()
+    ConversationService conversationService = Mock()
 
     @Subject
     ChatService chatService
 
     def setup() {
-        chatService = new ChatService(openAiService)
+        chatService = new ChatService(openAiService, conversationService)
         chatService.modelName = "gpt-3.5-turbo"
     }
 
     def "chat should return ChatResponse when OpenAI returns valid response"() {
         given: "a user message"
         def userMessage = "Hello, how are you?"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
 
         and: "OpenAI service returns a valid response"
         def chatMessage = new ChatMessage("assistant", "I'm doing well, thank you!")
@@ -39,17 +45,30 @@ class ChatServiceSpec extends Specification {
         when: "chat method is called"
         def response = chatService.chat(userMessage)
 
-        then: "OpenAI service is called with correct parameters"
+        then: "conversation is created"
+        1 * conversationService.createConversation(_) >> conversation
+
+        and: "OpenAI service is called with correct parameters"
         1 * openAiService.createChatCompletion(_ as ChatCompletionRequest) >> result
+
+        and: "messages are saved to conversation"
+        1 * conversationService.saveMessagePair(conversationId, userMessage, "I'm doing well, thank you!")
 
         and: "response contains expected data"
         response.response == "I'm doing well, thank you!"
         response.model == "gpt-3.5-turbo"
+        response.conversationId == conversationId
     }
 
     def "chat should throw ChatServiceException when OpenAI returns null result"() {
         given: "a user message"
         def userMessage = "Hello"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service returns null"
         openAiService.createChatCompletion(_ as ChatCompletionRequest) >> null
@@ -59,13 +78,18 @@ class ChatServiceSpec extends Specification {
 
         then: "ChatServiceException is thrown"
         def exception = thrown(ChatServiceException)
-        exception.message == "Failed to get response from OpenAI"
-        exception.cause.message == "No response generated from OpenAI"
+        exception.message == "No response generated from OpenAI"
     }
 
     def "chat should throw ChatServiceException when OpenAI returns empty choices"() {
         given: "a user message"
         def userMessage = "Hello"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service returns result with empty choices"
         def result = new ChatCompletionResult()
@@ -77,13 +101,18 @@ class ChatServiceSpec extends Specification {
 
         then: "ChatServiceException is thrown"
         def exception = thrown(ChatServiceException)
-        exception.message == "Failed to get response from OpenAI"
-        exception.cause.message == "No response generated from OpenAI"
+        exception.message == "No response generated from OpenAI"
     }
 
     def "chat should throw ChatServiceException when OpenAI returns null choices"() {
         given: "a user message"
         def userMessage = "Hello"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service returns result with null choices"
         def result = new ChatCompletionResult()
@@ -95,13 +124,18 @@ class ChatServiceSpec extends Specification {
 
         then: "ChatServiceException is thrown"
         def exception = thrown(ChatServiceException)
-        exception.message == "Failed to get response from OpenAI"
-        exception.cause.message == "No response generated from OpenAI"
+        exception.message == "No response generated from OpenAI"
     }
 
     def "chat should throw ChatServiceException when response message is null"() {
         given: "a user message"
         def userMessage = "Hello"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service returns result with null message"
         def choice = new ChatCompletionChoice()
@@ -116,13 +150,18 @@ class ChatServiceSpec extends Specification {
 
         then: "ChatServiceException is thrown"
         def exception = thrown(ChatServiceException)
-        exception.message == "Failed to get response from OpenAI"
-        exception.cause.message == "Invalid response format from OpenAI"
+        exception.message == "Invalid response format from OpenAI"
     }
 
     def "chat should throw ChatServiceException when response content is null"() {
         given: "a user message"
         def userMessage = "Hello"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service returns message with null content"
         def chatMessage = new ChatMessage("assistant", null)
@@ -138,13 +177,18 @@ class ChatServiceSpec extends Specification {
 
         then: "ChatServiceException is thrown"
         def exception = thrown(ChatServiceException)
-        exception.message == "Failed to get response from OpenAI"
-        exception.cause.message == "Invalid response format from OpenAI"
+        exception.message == "Invalid response format from OpenAI"
     }
 
     def "chat should throw ChatServiceException when OpenAI service throws exception"() {
         given: "a user message"
         def userMessage = "Hello"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service throws an exception"
         def originalException = new RuntimeException("API Error")
@@ -165,6 +209,12 @@ class ChatServiceSpec extends Specification {
 
         and: "a user message"
         def userMessage = "Test message"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service returns a valid response"
         def chatMessage = new ChatMessage("assistant", "Response")
@@ -191,6 +241,12 @@ class ChatServiceSpec extends Specification {
     def "chat should include user message in OpenAI request"() {
         given: "a specific user message"
         def userMessage = "What is the weather today?"
+
+        and: "conversation service creates a new conversation"
+        def conversationId = UUID.randomUUID()
+        def conversation = Mock(com.openai.chatbot.entity.Conversation)
+        conversation.getPublicId() >> conversationId
+        conversationService.createConversation(_) >> conversation
 
         and: "OpenAI service returns a valid response"
         def chatMessage = new ChatMessage("assistant", "It's sunny")

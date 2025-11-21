@@ -12,8 +12,12 @@ A full-stack monorepo application combining a Spring Boot backend with a Next.js
 - Java 21
 - Spring Boot 3.4.1
 - Gradle 8.5 (with gradle-node-plugin 7.0.1)
+- Spring Data JPA (conversation persistence)
+- H2 Database (file-based persistence at `./data/chatbot`)
+- Flyway (database migrations)
 - Spring Security 6 (security headers, CORS)
 - OpenAI Java Client (theokanning.openai-gpt3-java v0.18.2)
+- SpringDoc OpenAPI 2.3.0 (API documentation)
 - Lombok for reducing boilerplate
 - Spring Boot Actuator for health checks
 - Spock/Groovy for testing
@@ -132,7 +136,13 @@ gradlew.bat clean build
 - `openai.api.key`: OpenAI API key (defaults to `${OPENAI_API_KEY}`)
 - `openai.model`: Default model is `gpt-3.5-turbo`
 - `server.port`: Default is `8080`
+- `spring.datasource.url`: H2 database URL (`jdbc:h2:file:./data/chatbot`)
+- `spring.jpa.hibernate.ddl-auto`: Set to `validate` (Flyway manages schema)
+- `spring.flyway.enabled`: Enabled for database migrations
 - Actuator endpoints: `/actuator/health` and `/actuator/info` are exposed
+- H2 console: Available at `/h2-console`
+- Swagger UI: Available at `/swagger-ui.html`
+- OpenAPI JSON: Available at `/v3/api-docs`
 
 ## Architecture
 
@@ -142,12 +152,16 @@ chatbot-openai/
 ├── src/main/java/com/openai/chatbot/    # Backend Java code
 │   ├── controller/                       # REST API endpoints
 │   ├── service/                          # Business logic
+│   ├── entity/                           # JPA entities (Conversation, Message)
+│   ├── repository/                       # Spring Data JPA repositories
 │   ├── config/                           # Spring configuration
 │   ├── dto/                              # Data transfer objects
 │   └── exception/                        # Exception handling
 ├── src/main/resources/
 │   ├── application.properties            # Backend config
+│   ├── db/migration/                     # Flyway database migrations
 │   └── static/                          # Frontend build output (auto-generated)
+├── data/                                 # H2 database files (auto-generated)
 ├── frontend/                             # Next.js frontend
 │   ├── pages/                           # Next.js pages
 │   ├── public/                          # Static assets
@@ -159,8 +173,45 @@ chatbot-openai/
 **Backend Package Structure:**
 - Base package: `com.openai.chatbot`
 - Main class: `OpenaiChatbotApplication.java`
-- Layered architecture: controllers → services → config
+- Clean architecture: controllers → services → repositories → entities
+- Domain-driven design with JPA entities
 - Testing with Spock/Groovy
+
+**Data Model:**
+- **Conversation**: Aggregate root entity
+  - `id` (Long, internal)
+  - `publicId` (UUID, exposed to API)
+  - `userUuid` (UUID, for future user management)
+  - `title` (String, auto-generated from first 50 chars of first message)
+  - `createdAt`, `updatedAt` (timestamps)
+  - One-to-many relationship with Messages
+- **Message**: Child entity
+  - `id` (Long, internal)
+  - `role` (String, one of: 'user', 'assistant', 'system')
+  - `content` (TEXT, the message content)
+  - `createdAt` (timestamp)
+  - Many-to-one relationship with Conversation
+
+**API Endpoints:**
+
+*Chat API:*
+- `POST /api/chat`
+  - Request: `{ "message": "string", "conversationId": "uuid" }` (conversationId optional)
+  - Response: `{ "response": "string", "model": "string", "conversationId": "uuid" }`
+  - Creates new conversation if conversationId is null
+  - Saves message pair immediately after OpenAI response
+
+*Conversation API:*
+- `GET /api/conversations?userId={uuid}`
+  - Query param: `userId` (optional, defaults to default user)
+  - Response: Array of `{ "id": "uuid", "title": "string" }`
+  - Returns conversation summaries only (performance optimized)
+
+- `GET /api/conversations/{id}`
+  - Path param: `id` (conversation UUID)
+  - Response: `{ "id": "uuid", "title": "string", "messages": [...] }`
+  - Returns full conversation with all messages
+  - 404 if conversation not found
 
 **Frontend Structure:**
 - Pages Router architecture (Next.js 14.2.33)
@@ -188,11 +239,16 @@ chatbot-openai/
 
 **Dependencies:**
 - Spring Boot Web for REST APIs
+- Spring Boot Data JPA for database persistence
 - Spring Boot Validation for request validation
 - Spring Boot Actuator for monitoring
 - Spring Boot Security for security headers and CORS
 - Spring Boot DevTools for development hot reload
+- H2 Database for file-based persistence
+- Flyway Core for database migrations
+- SpringDoc OpenAPI for API documentation
 - Lombok annotations are available for reducing boilerplate
+- OpenAI Java Client for GPT integration
 - Next.js, React, TypeScript for frontend
 
 ## Development Notes
@@ -202,6 +258,10 @@ chatbot-openai/
 - Spring DevTools is included for automatic restart during development
 - Logging: Root level is INFO, `com.openai.chatbot` package is set to DEBUG
 - Health check available at: `http://localhost:8080/actuator/health`
+- H2 console available at: `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:file:./data/chatbot`)
+- Swagger UI available at: `http://localhost:8080/swagger-ui.html`
+- Database files stored in `./data/` directory (git-ignored)
+- Flyway migrations in `src/main/resources/db/migration/`
 
 **Frontend:**
 - Node.js and npm are managed automatically by gradle-node-plugin (no manual installation needed)
@@ -240,3 +300,45 @@ chatbot-openai/
 3. For full-stack development: Run both in separate terminals
 4. For production build: Run `gradlew clean build`
 5. For testing: Run `gradlew test` (backend) or `cd frontend && npm test` (frontend)
+
+## Conversation History Feature
+
+**Implementation Details:**
+
+*Database Schema:*
+- V1 migration creates `conversations` table with dual ID pattern (internal Long + public UUID)
+- V2 migration creates `messages` table with foreign key to conversations
+- Cascade delete ensures messages are removed when conversation is deleted
+- Indexes on `user_uuid` and `created_at` for efficient queries
+
+*Transaction Management:*
+- `ChatService.chat()` is wrapped in `@Transactional` to ensure atomicity
+- Ensures conversation creation and message saving happen as a single unit of work
+- Prevents orphaned conversations if message saving fails
+
+*Title Generation:*
+- Automatically generates title from first user message
+- Takes first 50 Unicode code points (handles emojis correctly)
+- Sanitizes control characters (except tabs) to prevent formatting issues
+- Appends "..." if title is truncated
+
+*Lazy Loading Prevention:*
+- `ConversationRepository.findByPublicIdWithMessages()` uses `LEFT JOIN FETCH`
+- Eagerly loads all messages to prevent `LazyInitializationException`
+- Critical for returning complete conversation details
+
+*Error Handling:*
+- `ConversationNotFoundException` returns 404 with message "Conversation not found: {id}"
+- `ConversationServiceException` returns 500 with message "Database connection error"
+- `GlobalExceptionHandler` provides consistent error responses
+
+*Testing:*
+- All existing tests updated to mock `ConversationService`
+- Tests verify conversation creation, message persistence, and exception handling
+- Spock framework with Given-When-Then structure
+
+**Important Notes:**
+- Currently uses default user UUID (`00000000-0000-0000-0000-000000000000`) for all conversations
+- System is prepared for future authentication with `userUuid` field
+- OpenAI API still only receives the current message (no context from previous messages)
+- Each user/assistant message pair is saved immediately after OpenAI response
